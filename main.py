@@ -12,6 +12,7 @@ async def handle(request):
         "hello": "world",
         "time": str(datetime.now())
     }
+    print(f"Received req @ {body['time']}")
     return web.Response(text=json.dumps(body), status=200)
 
 app = web.Application()
