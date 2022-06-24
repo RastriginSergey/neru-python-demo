@@ -1,0 +1,26 @@
+project:
+    name: neru-python-demo
+instance:
+    name: dev
+    runtime: python
+    region: aws.euw1
+    application-id: dfd81079-1206-4fea-b6a9-cdb0e4a2ce5a
+    capabilities:
+        - messaging
+        - rtc
+        - voice
+
+    entrypoint:
+        - python3
+        - main.py
+
+    configurations:
+        section1:
+            key1: this is an example
+        section2:
+            key2: 42
+
+debug:
+    entrypoint:
+        - python3
+        - main.py
