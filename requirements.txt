@@ -1,1 +1,4 @@
 aiohttp==3.8.1
+requests==2.22.0
+pyjwt==2.4.0
+flask[async]==2.1.2
