@@ -2,7 +2,7 @@ import sys
 import os
 sys.path.append("vendor")
 from flask import Flask, request, jsonify
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, tzinfo
 import asyncio
 import json
 from src.providers.messages.messages import Messages
@@ -17,6 +17,11 @@ from src.providers.voice.contracts.vapiEventParams import VapiEventParams
 app = Flask(__name__)
 neru = Neru()
 
+class simple_utc(tzinfo):
+    def tzname(self,**kwargs):
+        return "UTC"
+    def utcoffset(self, dt):
+        return timedelta(0)
 
 if os.getenv('NERU_CONFIGURATIONS') is None:
     print("NERU_CONFIGURATIONS environment variable is not set")
@@ -29,11 +34,10 @@ async def listenForInboundCall():
         session = neru.createSession()
         voice = Voice(session)
         await voice.onVapiAnswer('onCall').execute()
-
         return 'OK'
     except Exception as e:
         print(e)
-        return f"error occured in /start {e}", 500
+        return e, 500
 
 async def chargeCard():
     return await asyncio.sleep(3)
@@ -91,7 +95,7 @@ async def onCall():
 
     except Exception as e:
         print(e)
-        return 'error'
+        return e, 500
 
 
 @app.post('/onEvent')
@@ -177,7 +181,7 @@ async def onEvent():
                 testTime = datetime.now() + timedelta(seconds=20)
 
                 startAtParams = StartAtParams()
-                startAtParams.startAt = testTime.strftime("%Y-%m-%dT%H:%M:%SZ")
+                startAtParams.startAt = testTime.utcnow().replace(tzinfo=simple_utc()).isoformat().replace('+00:00', 'Z')
                 startAtParams.callback = 'parkingReminder'
                 startAtParams.payload = {
                     'from': fromNumber
@@ -262,7 +266,7 @@ async def parkingReminder():
 
         vonageNumber = MessageContact()
         vonageNumber.type = "sms"
-        vonageNumber.number = contact.number
+        vonageNumber.number = contact['number']
 
         await messaging.sendText(
             vonageNumber,
@@ -279,4 +283,4 @@ if __name__ == "__main__":
     event_loop = asyncio.get_event_loop()
     event_loop.run_until_complete(listenForInboundCall())
     port = os.getenv('NERU_APP_PORT')
-    app.run(host="localhost", port=port)
+    app.run(port=port)
