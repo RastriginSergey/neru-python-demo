@@ -24,12 +24,16 @@ if os.getenv('NERU_CONFIGURATIONS') is None:
 
 contact = json.loads(os.getenv('NERU_CONFIGURATIONS'))['contact']
 
-
 async def listenForInboundCall():
-    session = neru.createSession()
-    voice = Voice(session)
-    await voice.onVapiAnswer('onCall').execute()
+    try:
+        session = neru.createSession()
+        voice = Voice(session)
+        await voice.onVapiAnswer('onCall').execute()
 
+        return 'OK'
+    except Exception as e:
+        print(e)
+        return f"error occured in /start {e}", 500
 
 async def chargeCard():
     return await asyncio.sleep(3)
@@ -160,7 +164,7 @@ async def onEvent():
                         'loop': "0"
                     }
                 ])
-            if data.flowState == 'pay':
+            if data['flowState'] == 'pay':
                 scheduler = Scheduler(session)
                 await chargeCard()
 
@@ -179,7 +183,8 @@ async def onEvent():
                     'from': fromNumber
                 }
 
-                scheduler.startAt(startAtParams).execute()
+                await scheduler.startAt(startAtParams).execute()
+
                 return jsonify([
                     {
                         'action': 'talk',
@@ -201,8 +206,10 @@ async def onMessage():
             return 'request.data is not found', 400
         body = json.loads(request.data)
         session = neru.getSessionFromRequest(request)
+        voice = Voice(session)
         state = State(session, f'application:{session.id}')
-        data = await state.get("calldata")
+        dataStr = await state.get("calldata")
+        data = json.loads(dataStr)
         data['flowState'] = 'pay'
         data['reg'] = body['message']['content']['text']
         await state.set('calldata', data)
@@ -214,7 +221,7 @@ async def onMessage():
                 "ncco": [
                     {
                         'action': 'talk',
-                        'text': f"You've registered the car {data.reg}. Enter your card number followed by a hash to pay.",
+                        'text': f"You've registered the car {data['reg']}. Enter your card number followed by a hash to pay.",
                         'bargeIn': "true"
                     },
                     {
@@ -229,7 +236,7 @@ async def onMessage():
             }
         }
 
-        await voice.uploadNCCO(data.callUUID, ncco).execute()
+        await voice.uploadNCCO(data['callUUID'], ncco).execute()
 
         return 'OK'
     except Exception as e:
@@ -247,7 +254,8 @@ async def parkingReminder():
         state = State(session, f'application:{session.id}')
         messaging = Messages(session)
         fromNumber = body['from']
-        data = await state.get("calldata")
+        dataStr = await state.get("calldata")
+        data = json.loads(dataStr)
         toContact = MessageContact()
         toContact.type = "sms"
         toContact.number = fromNumber
@@ -259,34 +267,13 @@ async def parkingReminder():
         await messaging.sendText(
             vonageNumber,
             toContact,
-            f"Your parking at {data.parkingID} is about to run out."
+            f"Your parking at {data['parkingID']} is about to run out."
         ).execute()
 
         return 'OK'
     except Exception as e:
         print(e)
         return e, 500
-
-@app.post('/test')
-async def test():
-    session = neru.createSession()
-    messaging = Messages(session)
-
-    vonageContact = MessageContact()
-    vonageContact.type_keyword_ = 'sms'
-    vonageContact.number = contact['number']
-
-    toContact = MessageContact()
-    toContact.type_keyword_ = 'sms'
-    toContact.number = '4473007905617'
-
-    await messaging.sendText(
-        vonageContact,
-        toContact,
-        "Please reply with your car's registration number"
-    ).execute()
-
-    return 'ok'
 
 if __name__ == "__main__":
     event_loop = asyncio.get_event_loop()

@@ -8,7 +8,7 @@ instance:
     configurations:
         contact:
             type: phone
-            number: 447418361248
+            number: '447418361248'
     capabilities:
         - voice
         - messaging
