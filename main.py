@@ -18,10 +18,12 @@ app = Flask(__name__)
 neru = Neru()
 
 class simple_utc(tzinfo):
-    def tzname(self,**kwargs):
+    def tzname(self, **kwargs):
         return "UTC"
+
     def utcoffset(self, dt):
         return timedelta(0)
+
 
 if os.getenv('NERU_CONFIGURATIONS') is None:
     print("NERU_CONFIGURATIONS environment variable is not set")
@@ -34,14 +36,11 @@ async def listenForInboundCall():
         session = neru.createSession()
         voice = Voice(session)
         await voice.onVapiAnswer('onCall').execute()
-        return 'OK'
     except Exception as e:
-        print(e)
-        return e, 500
+        return 'error', 500
 
 async def chargeCard():
     return await asyncio.sleep(3)
-
 
 @app.get('/_/health')
 async def health():
@@ -94,7 +93,6 @@ async def onCall():
         ])
 
     except Exception as e:
-        print(e)
         return e, 500
 
 
@@ -181,7 +179,8 @@ async def onEvent():
                 testTime = datetime.now() + timedelta(seconds=20)
 
                 startAtParams = StartAtParams()
-                startAtParams.startAt = testTime.utcnow().replace(tzinfo=simple_utc()).isoformat().replace('+00:00', 'Z')
+                startAtParams.startAt = testTime.utcnow().replace(
+                    tzinfo=simple_utc()).isoformat().replace('+00:00', 'Z')
                 startAtParams.callback = 'parkingReminder'
                 startAtParams.payload = {
                     'from': fromNumber
@@ -196,10 +195,8 @@ async def onEvent():
                     }
                 ])
         else:
-            print(body)
             return 'OK'
     except Exception as e:
-        print(e)
         return 'error', 500
 
 
@@ -244,7 +241,6 @@ async def onMessage():
 
         return 'OK'
     except Exception as e:
-        print(e)
         return e, 500
 
 
@@ -276,11 +272,10 @@ async def parkingReminder():
 
         return 'OK'
     except Exception as e:
-        print(e)
         return e, 500
 
 if __name__ == "__main__":
+    port = os.getenv('NERU_APP_PORT')
+    app.run(host="localhost", port=port, debug=True)
     event_loop = asyncio.get_event_loop()
     event_loop.run_until_complete(listenForInboundCall())
-    port = os.getenv('NERU_APP_PORT')
-    app.run(port=port)
