@@ -276,6 +276,6 @@ async def parkingReminder():
 
 if __name__ == "__main__":
     port = os.getenv('NERU_APP_PORT')
-    app.run(host="localhost", port=port, debug=True)
+    app.run(host="localhost", port=port)
     event_loop = asyncio.get_event_loop()
     event_loop.run_until_complete(listenForInboundCall())
