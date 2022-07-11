@@ -13,8 +13,9 @@ instance:
         - voice
         - messaging
     entrypoint:
-        - python3
-        - main.py
+        - make
+        - start
 debug:
     entrypoint:
-        - ./run.sh
+        - make
+        - debug
