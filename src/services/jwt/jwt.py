@@ -17,29 +17,29 @@ class JWT(IJWT):
     def __init__(self,bridge,config):
         self.bridge = bridge
         self.config = config
-
+    
     def getToken(self):
         try:
             if self._token is None or self.isExpired():
                 self.updateToken()
-
+            
             return self._token
-
+        
         except Exception as e:
-            raise Exception(f'Error verifying JWT')
-
-
+            raise Exception(f'Error verifying JWT: {e}')
+        
+    
     def updateToken(self):
         expiresIn = self.bridge.getSystemTime() + self.ttl
         self._token = self.mintToken(expiresIn)
         self.expiresIn = expiresIn
-
+    
     def isExpired(self):
         nowInSeconds = self.bridge.getSystemTime()
         twentySeconds = 20
         twentySecondsAgoFromNow = nowInSeconds - twentySeconds
         return self.expiresIn >= twentySecondsAgoFromNow
-
+    
     def mintToken(self,exp):
         now = self.bridge.getSystemTime()
         payload = JWTPayload()
@@ -49,7 +49,7 @@ class JWT(IJWT):
         payload.iat = now
         payload.exp = exp
         return self.bridge.jwtSign(payload,self.config.privateKey,"RS256")
-
+    
     def reprJSON(self):
         dict = {}
         keywordsMap = {"from_":"from","del_":"del","import_":"import","type_":"type"}

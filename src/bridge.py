@@ -37,14 +37,24 @@ class Bridge(IBridge):
             else:
                 headers = {}
 
+            print(data, flush=True)
+            print(headers, flush=True)
+            print(url, flush=True)
+
             async with aiohttp.ClientSession() as session:
                 async with session.request(method, url, json=data, headers=headers) as resp:
+                    print(resp.status, flush=True)
                     if resp.content_type == 'application/json':
-                        return await resp.json()
+                        res = await resp.json()
+                        print(res, flush=True)
+                        return res
                     else:
-                        return await resp.text()
+                        res = await resp.text()
+                        print(res, flush=True)
+                        return res
+
         except Exception as e:
-            print("Exception in request")
+            print("Exception in request" + str(e), flush=True)
             raise e
 
     async def requestWithoutResponse(self,params):

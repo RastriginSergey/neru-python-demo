@@ -35,24 +35,24 @@ class NeruSession(ISession):
         self.config = config
         self.jwt = jwt
         self.logger = Logger(self)
-    
+
     def createUUID(self):
         return self.bridge.uuid()
-    
+
     def getToken(self):
-        if self.config.debug is not None:
+        if self.config.debug:
             return None
-        
+
         return self.jwt.getToken()
-    
+
     async def log(self,level,message,context = None):
         try:
             await self.logger.log(level,message,context)
-        
+
         except Exception as e:
             raise Exception("Error during sending logs:" + e)
-        
-    
+
+
     def wrapCallback(self,route,filters):
         wrappedCallback = WrappedCallback()
         wrappedCallback.filters = filters
@@ -62,7 +62,7 @@ class NeruSession(ISession):
         wrappedCallback.instanceId = self.config.instanceId
         wrappedCallback.path = route
         return wrappedCallback
-    
+
     def constructCommandHeaders(self):
         commandHeaders = CommandHeaders()
         commandHeaders.traceId = self.createUUID()
@@ -73,7 +73,7 @@ class NeruSession(ISession):
         commandHeaders.applicationName = self.config.instanceServiceName
         commandHeaders.applicationId = self.config.applicationId
         return commandHeaders
-    
+
     def constructRequestHeaders(self):
         requestHeaders = RequestHeaders()
         requestHeaders.X_hyphen_Neru_hyphen_SessionId = self.id
@@ -84,9 +84,9 @@ class NeruSession(ISession):
         token = self.getToken()
         if token is not None:
             requestHeaders.Authorization = f'Bearer {token}'
-        
+
         return requestHeaders
-    
+
     async def executeAction(self,actionPayload):
         try:
             commandHeaders = self.constructCommandHeaders()
@@ -97,13 +97,13 @@ class NeruSession(ISession):
             context = LogContext(actionPayload.action,self.bridge.jsonStringify(actionPayload.payload),self.bridge.jsonStringify(result))
             await self.logger.log(LogLevels.info,f'Executing action: {actionPayload.action}, provider: {actionPayload.provider}',context)
             return result
-        
+
         except Exception as e:
             context = LogContext(actionPayload.action,self.bridge.jsonStringify(actionPayload.payload),e)
             await self.log(LogLevels.error,f'Error while executing action: {actionPayload.action}, provider: {actionPayload.provider}',context)
             raise Exception(e)
-        
-    
+
+
     def reprJSON(self):
         dict = {}
         keywordsMap = {"from_":"from","del_":"del","import_":"import","type_":"type"}

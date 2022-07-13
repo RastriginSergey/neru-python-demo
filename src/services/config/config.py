@@ -22,31 +22,31 @@ class Config(IConfig):
         self.bridge = bridge
         if self.bridge.getEnv("NAMESPACE") is not None:
             self.namespace = self.bridge.getEnv("NAMESPACE")
-        
+
         self.instanceServiceName = self.bridge.getEnv("INSTANCE_SERVICE_NAME")
         self.applicationId = self.bridge.getEnv("APPLICATION_ID")
         if self.bridge.getEnv("INSTANCE_ID") is not None:
             self.instanceId = self.bridge.getEnv("INSTANCE_ID")
-        
+
         self.apiApplicationId = self.bridge.getEnv("API_APPLICATION_ID")
         self.apiAccountId = self.bridge.getEnv("API_ACCOUNT_ID")
         self.privateKey = self.bridge.getEnv("PRIVATE_KEY")
         self.appUrl = f'{self.bridge.getEnv("ENDPOINT_URL_SCHEME")}/{self.bridge.getEnv("INSTANCE_SERVICE_NAME")}'
         debug = self.bridge.getEnv("DEBUG")
-        if debug is "true":
+        if debug == "true":
             self.debug = True
-        
+
         self.assetUrl = "http://openfaas.euw1.dev.nexmo.cloud/function/vonage-assets?get="
-    
+
     def getExecutionUrl(self,func):
         value = f'{func}.{self.namespace}'
         if self.debug:
             return f'http://localhost:3001?func={value}&async=false'
-        
-        else: 
+
+        else:
             return f'http://{value}'
-        
-    
+
+
     def reprJSON(self):
         dict = {}
         keywordsMap = {"from_":"from","del_":"del","import_":"import","type_":"type"}
