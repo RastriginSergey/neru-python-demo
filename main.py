@@ -1,10 +1,11 @@
 import sys
 import os
 sys.path.append("vendor")
-from flask import Flask, request, jsonify
-from datetime import datetime, timedelta, tzinfo
+import pendulum as pdl
 import asyncio
 import json
+from flask import Flask, request, jsonify
+from datetime import datetime, timedelta, tzinfo
 from src.providers.messages.messages import Messages
 from src.neru import Neru
 from src.providers.scheduler.contracts.startAtParams import StartAtParams
@@ -17,14 +18,6 @@ from src.providers.voice.contracts.vapiEventParams import VapiEventParams
 app = Flask(__name__)
 neru = Neru()
 
-class simple_utc(tzinfo):
-    def tzname(self, **kwargs):
-        return "UTC"
-
-    def utcoffset(self, dt):
-        return timedelta(0)
-
-
 if os.getenv('NERU_CONFIGURATIONS') is None:
     print("NERU_CONFIGURATIONS environment variable is not set")
     sys.exit(1)
@@ -33,11 +26,13 @@ contact = json.loads(os.getenv('NERU_CONFIGURATIONS'))['contact']
 
 async def listenForInboundCall():
     try:
+        print('start listening for inbound call')
         session = neru.createSession()
         voice = Voice(session)
         await voice.onVapiAnswer('onCall').execute()
     except Exception as e:
-        return 'error', 500
+        print(e)
+        sys.exit(1)
 
 async def chargeCard():
     return await asyncio.sleep(3)
@@ -62,11 +57,11 @@ async def onCall():
         await voice.onVapiEvent(vapiEventParams).execute()
 
         fromContact = MessageContact()
-        fromContact.type_keyword_ = 'sms'
+        fromContact.type_ = 'sms'
         fromContact.number = body['from']
 
         toContact = MessageContact()
-        toContact.type_keyword_ = 'sms'
+        toContact.type_ = 'sms'
         toContact.number = contact['number']
 
         await messaging.listenMessages(fromContact, toContact, 'onMessage').execute()
@@ -112,11 +107,11 @@ async def onEvent():
             fromNumber = body['from']
 
             toContact = MessageContact()
-            toContact.type_keyword_ = 'sms'
+            toContact.type_ = 'sms'
             toContact.number = fromNumber
 
             vonageContact = MessageContact()
-            vonageContact.type_keyword_ = 'sms'
+            vonageContact.type_ = 'sms'
             vonageContact.number = contact['number']
 
             digits = body['dtmf']['digits']
@@ -176,11 +171,11 @@ async def onEvent():
                     f"You are parking at {data['parkingID']} and have paid for {data['duration']} hours."
                 ).execute()
 
-                testTime = datetime.now() + timedelta(seconds=20)
-
                 startAtParams = StartAtParams()
-                startAtParams.startAt = testTime.utcnow().replace(
-                    tzinfo=simple_utc()).isoformat().replace('+00:00', 'Z')
+                testTime = datetime.now() + timedelta(seconds=20)
+                dt = pdl.from_timestamp(testTime.timestamp())
+
+                startAtParams.startAt = dt.to_iso8601_string()
                 startAtParams.callback = 'parkingReminder'
                 startAtParams.payload = {
                     'from': fromNumber
@@ -274,8 +269,9 @@ async def parkingReminder():
     except Exception as e:
         return e, 500
 
+
 if __name__ == "__main__":
-    port = os.getenv('NERU_APP_PORT')
-    app.run(host="localhost", port=port)
     event_loop = asyncio.get_event_loop()
     event_loop.run_until_complete(listenForInboundCall())
+    port = os.getenv('NERU_APP_PORT')
+    app.run(host="0.0.0.0", port=port)
