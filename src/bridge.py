@@ -18,27 +18,34 @@ class Bridge(IBridge):
     def getEnv(self,name):
         return os.getenv(name)
     async def request(self,params):
-        if not params.url:
-            raise Exception('url is required')
-        if not params.method:
-            raise Exception('method is required')
+        try:
+            if not params.url:
+                raise Exception('url is required')
+            if not params.method:
+                raise Exception('method is required')
 
-        url = params.url
-        method = params.method
+            url = params.url
+            method = params.method
 
-        if params.data:
-            data = params.data.reprJSON()
-        else:
-            data = {}
+            if params.data:
+                data = params.data.reprJSON()
+            else:
+                data = {}
 
-        if params.headers:
-            headers = params.headers.reprJSON()
-        else:
-            headers = {}
+            if params.headers:
+                headers = params.headers.reprJSON()
+            else:
+                headers = {}
 
-        async with aiohttp.ClientSession() as session:
-            async with session.request(method, url, json=data, headers=headers) as resp:
-                return await resp.text()
+            async with aiohttp.ClientSession() as session:
+                async with session.request(method, url, json=data, headers=headers) as resp:
+                    if resp.content_type == 'application/json':
+                        return await resp.json()
+                    else:
+                        return await resp.text()
+        except Exception as e:
+            print("Exception in request")
+            raise e
 
     async def requestWithoutResponse(self,params):
         await self.request(params)
@@ -48,7 +55,14 @@ class Bridge(IBridge):
         my_date = datetime.now()
         return my_date.isoformat()
     def jwtSign(self,payload,privateKey,algorithm):
-        return jwt.encode(payload, privateKey, algorithm)
+        return jwt.encode({
+            'api_application_id': payload.api_application_id,
+            'api_account_id': payload.api_account_id,
+            'exp': payload.exp,
+            'aud': payload.aud,
+            'sub': payload.sub,
+            'iss': payload.iss,
+            }, privateKey, algorithm)
     def jwtVerify(self,token,privateKey,algorithm):
         return jwt.decode(token, privateKey, algorithm)
     def getSystemTime(self):
