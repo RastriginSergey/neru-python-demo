@@ -1,19 +1,19 @@
 import sys
 import os
 sys.path.append("vendor")
-import pendulum as pdl
 import asyncio
 import json
 from flask import Flask, request, jsonify
 from datetime import datetime, timedelta, tzinfo
-from src.providers.messages.messages import Messages
-from src.neru import Neru
-from src.providers.scheduler.contracts.startAtParams import StartAtParams
-from src.providers.scheduler.scheduler import Scheduler
-from src.providers.state.state import State
-from src.providers.voice.voice import Voice
-from src.providers.messages.contracts.messageContact import MessageContact
-from src.providers.voice.contracts.vapiEventParams import VapiEventParams
+
+from nerualpha.neru import Neru
+from nerualpha.providers.voice.voice import Voice
+from nerualpha.providers.messages.messages import Messages
+from nerualpha.providers.scheduler.contracts.startAtParams import StartAtParams
+from nerualpha.providers.scheduler.scheduler import Scheduler
+from nerualpha.providers.state.state import State
+from nerualpha.providers.messages.contracts.messageContact import MessageContact
+from nerualpha.providers.voice.contracts.vapiEventParams import VapiEventParams
 
 app = Flask(__name__)
 neru = Neru()
