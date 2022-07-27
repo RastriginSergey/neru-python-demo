@@ -15,6 +15,7 @@ from nerualpha.providers.state.state import State
 from nerualpha.providers.messages.contracts.messageContact import MessageContact
 from nerualpha.providers.voice.contracts.vapiEventParams import VapiEventParams
 
+
 app = Flask(__name__)
 neru = Neru()
 
@@ -27,11 +28,13 @@ contact = json.loads(os.getenv('NERU_CONFIGURATIONS'))['contact']
 async def listenForInboundCall():
     try:
         print('start listening for inbound call')
+
         session = neru.createSession()
         voice = Voice(session)
         await voice.onVapiAnswer('onCall').execute()
     except Exception as e:
         print(e)
+
         sys.exit(1)
 
 async def chargeCard():
@@ -274,4 +277,4 @@ if __name__ == "__main__":
     event_loop = asyncio.get_event_loop()
     event_loop.run_until_complete(listenForInboundCall())
     port = os.getenv('NERU_APP_PORT')
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="localhost", port=port)
