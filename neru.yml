@@ -2,7 +2,7 @@ project:
     name: parking-python
 instance:
     name: dev
-    runtime: python
+    runtime: python3
     region: aws.euw1
     application-id: 483fb0ba-55ea-4aa0-8abf-bf4b006a7297
     configurations:
@@ -13,9 +13,8 @@ instance:
         - voice
         - messaging
     entrypoint:
-        - make
-        - start
+        ["python3", "main.py"]
 debug:
     entrypoint:
-        - make
-        - debug
+        ["nodemon", "--exec", "python3", "main.py"]
+        # ["nodemon", "--exec", "python3", "-m", "debugpy", "--listen", "localhost:9229", "--wait-for-client", "main.py"]
